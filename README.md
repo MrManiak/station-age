@@ -73,6 +73,21 @@ With `.env` filled in and the command registered (steps 4 and 5 above):
 docker compose up -d --build
 ```
 
+## Development
+
+Running the tests needs Node.js 22.12 or newer.
+
+```sh
+npm test            # run the test suite once
+npm run test:watch  # re-run tests as files change
+npm run coverage    # run the suite and enforce 100% coverage
+npm run typecheck   # type-check the source and the tests
+```
+
+The tests never contact Discord or Adam4EVE and do not read your `.env`.
+
+Every pull request runs the type check, the build and the coverage run on GitHub Actions. A pull request cannot be merged until that check passes, and the coverage run fails if any line, branch or function in `src/` is not exercised by a test.
+
 ## Credits
 
 Structure data comes from [Adam4EVE](https://www.adam4eve.eu/), fetched at runtime from `https://static.adam4eve.eu/IDs/playerStructure_extended.txt`. This project is not affiliated with Adam4EVE.
