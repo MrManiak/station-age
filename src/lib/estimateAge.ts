@@ -35,9 +35,10 @@ export function estimateFirstSeen(targetId: bigint, entries: StructureEntry[]): 
   const lower = entries[lo - 1];
   const upper = entries[lo];
   // Compute interpolation factor in Number after subtracting lower.id to keep precision.
+  // The search above guarantees lower.id < targetId < upper.id, so span is never zero.
   const span = Number(upper.id - lower.id);
   const offset = Number(targetId - lower.id);
-  const t = span === 0 ? 0 : offset / span;
+  const t = offset / span;
   // Use the monotonic-corrected dates for the math so scraper-lag outliers
   // can't produce a non-sensical (e.g. inverted) interpolation.
   const lowerMs = lower.monotonicFirstSeen.getTime();
@@ -47,7 +48,7 @@ export function estimateFirstSeen(targetId: bigint, entries: StructureEntry[]): 
 }
 
 export function humanizeAge(from: Date, to: Date = new Date()): string {
-  let ms = to.getTime() - from.getTime();
+  const ms = to.getTime() - from.getTime();
   if (ms < 0) return "in the future";
   const dayMs = 24 * 60 * 60 * 1000;
   const days = Math.floor(ms / dayMs);

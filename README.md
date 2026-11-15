@@ -31,7 +31,7 @@ The `input` option accepts either:
 
 ## Setup
 
-You need Node.js 18 or newer and a Discord application with a bot user.
+You need Node.js 22.12 or newer and a Discord application with a bot user.
 
 1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications) and add a bot to it. The bot needs no privileged intents.
 2. Invite it to your server with the `bot` and `applications.commands` scopes.
@@ -47,6 +47,8 @@ You need Node.js 18 or newer and a Discord application with a bot user.
    | --- | --- |
    | `DISCORD_TOKEN` | Developer Portal, **Bot** page, **Reset Token** |
    | `DISCORD_CLIENT_ID` | Developer Portal, **General Information** page, **Application ID** |
+
+   The npm scripts below load `.env` for you. If you start the bot some other way, set both variables in its environment instead.
 
 5. Register the `/stationage` command with Discord. Do this once, and again whenever the command definition changes:
 
@@ -72,6 +74,23 @@ With `.env` filled in and the command registered (steps 4 and 5 above):
 ```sh
 docker compose up -d --build
 ```
+
+## Development
+
+```sh
+npm test            # run the test suite once
+npm run test:watch  # re-run tests as files change
+npm run coverage    # run the suite and enforce 100% coverage
+npm run typecheck   # type-check the source and the tests
+npm run lint        # check linting and formatting with Biome
+npm run lint:fix    # fix what Biome can fix automatically, including formatting
+```
+
+The tests never contact Discord or Adam4EVE and do not read your `.env`.
+
+Every pull request runs the lint check, the type check, the build and the coverage run on GitHub Actions. A pull request cannot be merged until that check passes, and the coverage run fails if any line, branch or function in `src/` is not exercised by a test.
+
+Dependabot opens pull requests for dependency updates once a week, and waits until a new version is a week old before proposing it.
 
 ## Credits
 

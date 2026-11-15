@@ -1,0 +1,2 @@
+# Check files out with LF on every platform; the formatter expects LF.
+* text=auto eol=lf

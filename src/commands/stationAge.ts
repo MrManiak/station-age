@@ -1,14 +1,18 @@
-import {
-  ChatInputCommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
-import { parseStationId } from "../lib/parseStationId.js";
-import { getStructureData } from "../lib/structureData.js";
+import { type ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { estimateFirstSeen, formatDateUTC, humanizeAge } from "../lib/estimateAge.js";
 import { log } from "../lib/log.js";
+import { parseStationId } from "../lib/parseStationId.js";
+import { getStructureData, type StructureEntry } from "../lib/structureData.js";
 
 const DATASET_URL = "https://static.adam4eve.eu/IDs/playerStructure_extended.txt";
+
+// The dataset doesn't always record a structure's name or type.
+function describeStructure(entry: StructureEntry): string {
+  if (entry.name && entry.typeName) return `${entry.name} (${entry.typeName})`;
+  if (entry.name) return entry.name;
+  if (entry.typeName) return `unnamed ${entry.typeName}`;
+  return "unnamed structure";
+}
 
 export const data = new SlashCommandBuilder()
   .setName("stationage")
@@ -56,7 +60,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         { name: "Age", value: `≈ ${humanizeAge(result.date)}`, inline: true },
         {
           name: "Method",
-          value: `Exact match: ${result.match.name} (${result.match.typeName})`,
+          value: `Exact match: ${describeStructure(result.match)}`,
           inline: false,
         },
       );
@@ -85,7 +89,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
           name: "Method",
           value:
             `Extrapolated — the target ID lies ${verb} the known dataset range. ` +
-            `Boundary: \`${result.boundary.id}\` (${result.boundary.name}).`,
+            `Boundary: \`${result.boundary.id}\` (${result.boundary.name || "unnamed structure"}).`,
           inline: false,
         },
       );

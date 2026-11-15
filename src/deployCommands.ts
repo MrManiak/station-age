@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { REST, Routes } from "discord.js";
 import { data as stationAgeData } from "./commands/stationAge.js";
 

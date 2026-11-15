@@ -2,6 +2,7 @@ import { log } from "./log.js";
 
 export type StructureEntry = {
   id: bigint;
+  // Empty when the dataset has no name / type for the structure.
   name: string;
   typeName: string;
   firstSeen: Date;
@@ -22,9 +23,26 @@ const DATASET_URL = "https://static.adam4eve.eu/IDs/playerStructure_extended.txt
 const TTL_MS = 6 * 60 * 60 * 1000;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const POSITIVE_INT = /^\d+$/;
+// Structure_ID, Type_ID, Type_Name, SolarSystem_ID, Region_ID, Structure_Name,
+// Owner_ID, Owner_Name, Is_Freeport, First_Seen, Last_Seen.
+const FIELD_COUNT = 11;
 
 let cache: CacheSnapshot | null = null;
 let inFlight: Promise<CacheSnapshot> | null = null;
+
+// The dataset writes an empty field as two tabs, so a row gains one column per
+// missing value. Undo that so fields can be read by position. A row that
+// already has FIELD_COUNT columns has nothing to undo.
+function splitFields(line: string): string[] {
+  const cols = line.split("\t");
+  if (cols.length === FIELD_COUNT) return cols;
+  const fields: string[] = [];
+  for (let i = 0; i < cols.length; i++) {
+    fields.push(cols[i]);
+    if (cols[i] === "" && cols[i + 1] === "") i++;
+  }
+  return fields;
+}
 
 function parseDataset(text: string): StructureEntry[] {
   const lines = text.split(/\r?\n/);
@@ -33,12 +51,15 @@ function parseDataset(text: string): StructureEntry[] {
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
     if (!line) continue;
-    const cols = line.split("\t");
-    if (cols.length < 10) continue;
-    const idStr = cols[0];
-    const typeName = cols[2];
-    const name = cols[5];
-    const firstSeenStr = cols[9];
+    const fields = splitFields(line);
+    const idStr = fields[0];
+    // An estimate only needs the ID and First_Seen. First_Seen is always
+    // second to last, so a row whose other fields don't line up is still
+    // usable; it just has no name or type to show.
+    const firstSeenStr = fields.at(-2) ?? "";
+    const aligned = fields.length === FIELD_COUNT;
+    const typeName = aligned ? fields[2] : "";
+    const name = aligned ? fields[5] : "";
     if (!POSITIVE_INT.test(idStr)) continue;
     if (!ISO_DATE.test(firstSeenStr)) continue;
     const firstSeen = new Date(`${firstSeenStr}T00:00:00Z`);
@@ -85,7 +106,10 @@ async function refresh(): Promise<CacheSnapshot> {
 
 export async function getStructureData(): Promise<CacheSnapshot> {
   if (cache && Date.now() - cache.fetchedAt < TTL_MS) {
-    log("data", `cache hit (${cache.entries.length} entries, age ${Date.now() - cache.fetchedAt}ms)`);
+    log(
+      "data",
+      `cache hit (${cache.entries.length} entries, age ${Date.now() - cache.fetchedAt}ms)`,
+    );
     return cache;
   }
   if (!inFlight) {

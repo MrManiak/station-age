@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import { data as stationAgeData, execute as stationAgeExecute } from "./commands/stationAge.js";
 
