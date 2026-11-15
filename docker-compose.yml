@@ -1,0 +1,8 @@
+services:
+  bot:
+    build: .
+    image: station-age:latest
+    container_name: station-age
+    restart: unless-stopped
+    env_file:
+      - .env

@@ -1,0 +1,32 @@
+{
+  "name": "station-age",
+  "version": "1.0.0",
+  "description": "Discord command that estimates the age of a station in Eve Online",
+  "private": true,
+  "license": "MIT",
+  "author": "MrManiak",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MrManiak/station-age.git"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "deploy-commands": "tsx src/deployCommands.ts"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}
