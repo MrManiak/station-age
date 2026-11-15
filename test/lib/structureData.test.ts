@@ -31,6 +31,11 @@ function row(
   ].join("\t");
 }
 
+// The real file writes an empty field as two tabs, so each one adds a column.
+function padded(fields: string[]): string {
+  return fields.flatMap((field) => (field === "" ? ["", ""] : [field])).join("\t");
+}
+
 function dataset(...rows: string[]): string {
   return [...PREAMBLE, ...rows, ""].join("\r\n");
 }
@@ -106,7 +111,8 @@ describe("parsing", () => {
       dataset(
         row("1000000", "2020-01-01"),
         "",
-        "1000001\t35832\tAstrahus\ttoo few columns",
+        "1000001\t35832\tAstrahus\tno date",
+        "1000002",
         row("not-a-number", "2020-01-02"),
         row("1000003", "02/01/2020"),
         row("1000004", "2020-13-45"),
@@ -156,6 +162,103 @@ describe("parsing", () => {
     expect(entries.map((e) => e.monotonicFirstSeen)).toEqual(
       ["2020-01-01", "2020-03-01", "2020-03-01", "2021-01-01", "2021-01-01"].map(utc),
     );
+  });
+});
+
+describe("rows with missing fields", () => {
+  const FIELDS = [
+    "1021010094060", // 0 Structure_ID
+    "35832", // 1 Type_ID
+    "Astrahus", // 2 Type_Name
+    "30005202", // 3 SolarSystem_ID
+    "10000067", // 4 Region_ID
+    "Emsar - Thyssen-Krupp II", // 5 Structure_Name
+    "98517834", // 6 Owner_ID
+    "Middle Germany Mining Public Company", // 7 Owner_Name
+    "1", // 8 Is_Freeport
+    "2016-11-17", // 9 First_Seen
+    "2019-03-29", // 10 Last_Seen
+  ];
+  const NAME = FIELDS[5];
+  const TYPE = FIELDS[2];
+
+  const without = (...indexes: number[]) => FIELDS.map((f, i) => (indexes.includes(i) ? "" : f));
+
+  async function parseOne(line: string) {
+    stubFetch(dataset(line));
+    const { getStructureData } = await loadModule();
+    const { entries } = await getStructureData();
+    expect(entries).toHaveLength(1);
+    return entries[0];
+  }
+
+  it("reads a row copied from the real file, with no region and no freeport flag", async () => {
+    const line =
+      "1021008794949\t35832\tAstrahus\t30003779\t\t\tTXJ-II - Marabunta Sanctum\t895076847\tNightwing Transit Inc.\t\t\t2018-07-29\t2018-07-29";
+
+    expect(await parseOne(line)).toEqual({
+      id: 1021008794949n,
+      name: "TXJ-II - Marabunta Sanctum",
+      typeName: "Astrahus",
+      firstSeen: utc("2018-07-29"),
+      monotonicFirstSeen: utc("2018-07-29"),
+    });
+  });
+
+  it.each([
+    { missing: "Is_Freeport", indexes: [8], name: NAME, typeName: TYPE },
+    { missing: "Region_ID", indexes: [4], name: NAME, typeName: TYPE },
+    { missing: "the owner", indexes: [6, 7], name: NAME, typeName: TYPE },
+    { missing: "the owner and Is_Freeport", indexes: [6, 7, 8], name: NAME, typeName: TYPE },
+    { missing: "Region_ID and Is_Freeport", indexes: [4, 8], name: NAME, typeName: TYPE },
+    { missing: "the type", indexes: [1, 2], name: NAME, typeName: "" },
+    { missing: "Type_ID only", indexes: [1], name: NAME, typeName: TYPE },
+    { missing: "Structure_Name", indexes: [5], name: "", typeName: TYPE },
+    { missing: "Region_ID and Structure_Name", indexes: [4, 5], name: "", typeName: TYPE },
+    { missing: "SolarSystem_ID", indexes: [3], name: NAME, typeName: TYPE },
+    { missing: "everything but the ID and dates", indexes: [1, 2, 3, 4, 5, 6, 7, 8], name: "", typeName: "" },
+  ])("keeps a row missing $missing", async ({ indexes, name, typeName }) => {
+    const line = padded(without(...indexes));
+    expect(line.split("\t")).toHaveLength(FIELDS.length + indexes.length);
+
+    expect(await parseOne(line)).toEqual({
+      id: 1021010094060n,
+      name,
+      typeName,
+      firstSeen: utc("2016-11-17"),
+      monotonicFirstSeen: utc("2016-11-17"),
+    });
+  });
+
+  it("reads an 11-column row as is, even when its empty fields are not doubled", async () => {
+    const line = without(4, 6, 7, 8).join("\t");
+    expect(line.split("\t")).toHaveLength(11);
+
+    expect(await parseOne(line)).toMatchObject({
+      name: NAME,
+      typeName: TYPE,
+      firstSeen: utc("2016-11-17"),
+    });
+  });
+
+  it("keeps a row with an unexpected extra column, without guessing its name or type", async () => {
+    const line = [...FIELDS.slice(0, 9), "unexpected", ...FIELDS.slice(9)].join("\t");
+
+    expect(await parseOne(line)).toEqual({
+      id: 1021010094060n,
+      name: "",
+      typeName: "",
+      firstSeen: utc("2016-11-17"),
+      monotonicFirstSeen: utc("2016-11-17"),
+    });
+  });
+
+  it("keeps a row that has nothing but the ID and the two dates", async () => {
+    expect(await parseOne("1021010094060\t2016-11-17\t2019-03-29")).toMatchObject({
+      id: 1021010094060n,
+      name: "",
+      firstSeen: utc("2016-11-17"),
+    });
   });
 });
 
