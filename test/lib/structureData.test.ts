@@ -216,7 +216,12 @@ describe("rows with missing fields", () => {
     { missing: "Structure_Name", indexes: [5], name: "", typeName: TYPE },
     { missing: "Region_ID and Structure_Name", indexes: [4, 5], name: "", typeName: TYPE },
     { missing: "SolarSystem_ID", indexes: [3], name: NAME, typeName: TYPE },
-    { missing: "everything but the ID and dates", indexes: [1, 2, 3, 4, 5, 6, 7, 8], name: "", typeName: "" },
+    {
+      missing: "everything but the ID and dates",
+      indexes: [1, 2, 3, 4, 5, 6, 7, 8],
+      name: "",
+      typeName: "",
+    },
   ])("keeps a row missing $missing", async ({ indexes, name, typeName }) => {
     const line = padded(without(...indexes));
     expect(line.split("\t")).toHaveLength(FIELDS.length + indexes.length);
@@ -266,9 +271,11 @@ describe("fetch failures", () => {
   it("rejects when the server responds with an error status", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn<typeof fetch>().mockResolvedValue(
-        new Response("nope", { status: 503, statusText: "Service Unavailable" }),
-      ),
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(
+          new Response("nope", { status: 503, statusText: "Service Unavailable" }),
+        ),
     );
     const { getStructureData } = await loadModule();
 

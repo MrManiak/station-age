@@ -27,9 +27,6 @@ const mocks = vi.hoisted(() => {
   return { FakeClient, clients, execute: vi.fn() };
 });
 
-// Keeps a developer's real .env (and its bot token) out of the test run.
-vi.mock("dotenv/config", () => ({}));
-
 vi.mock("discord.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("discord.js")>()),
   Client: mocks.FakeClient,
@@ -45,7 +42,13 @@ class ExitCalled extends Error {}
 async function startBot() {
   await import("../src/index.js");
   expect(mocks.clients).toHaveLength(1);
-  return mocks.clients[0];
+  const client = mocks.clients[0];
+  const emit = (event: string, ...args: unknown[]) => {
+    const handler = client.handlers.get(event);
+    if (!handler) throw new Error(`No handler registered for ${event}`);
+    return handler(...args);
+  };
+  return { client, emit };
 }
 
 beforeEach(() => {
@@ -72,7 +75,7 @@ it("exits with an error when DISCORD_TOKEN is not set", async () => {
 });
 
 it("logs in with the token, requesting only the Guilds intent", async () => {
-  const client = await startBot();
+  const { client } = await startBot();
 
   expect(client.options).toEqual({ intents: [GatewayIntentBits.Guilds] });
   expect(client.login).toHaveBeenCalledExactlyOnceWith("test-token");
@@ -80,36 +83,36 @@ it("logs in with the token, requesting only the Guilds intent", async () => {
 
 it("announces the bot's tag once it is ready", async () => {
   const consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
-  const client = await startBot();
+  const { emit } = await startBot();
 
-  client.handlers.get(Events.ClientReady)!({ user: { tag: "station-age#1234" } });
+  emit(Events.ClientReady, { user: { tag: "station-age#1234" } });
 
   expect(consoleLog).toHaveBeenCalledExactlyOnceWith("Logged in as station-age#1234");
 });
 
 it("runs the command for a /stationage interaction", async () => {
-  const client = await startBot();
+  const { emit } = await startBot();
   const interaction = { isChatInputCommand: () => true, commandName: "stationage" };
 
-  await client.handlers.get(Events.InteractionCreate)!(interaction);
+  await emit(Events.InteractionCreate, interaction);
 
   expect(mocks.execute).toHaveBeenCalledExactlyOnceWith(interaction);
 });
 
 it("ignores interactions that are not slash commands", async () => {
-  const client = await startBot();
+  const { emit } = await startBot();
   const interaction = { isChatInputCommand: () => false, commandName: "stationage" };
 
-  await client.handlers.get(Events.InteractionCreate)!(interaction);
+  await emit(Events.InteractionCreate, interaction);
 
   expect(mocks.execute).not.toHaveBeenCalled();
 });
 
 it("ignores other slash commands", async () => {
-  const client = await startBot();
+  const { emit } = await startBot();
   const interaction = { isChatInputCommand: () => true, commandName: "ping" };
 
-  await client.handlers.get(Events.InteractionCreate)!(interaction);
+  await emit(Events.InteractionCreate, interaction);
 
   expect(mocks.execute).not.toHaveBeenCalled();
 });

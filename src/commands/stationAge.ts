@@ -1,12 +1,8 @@
-import {
-  ChatInputCommandInteraction,
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
-import { parseStationId } from "../lib/parseStationId.js";
-import { getStructureData, type StructureEntry } from "../lib/structureData.js";
+import { type ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { estimateFirstSeen, formatDateUTC, humanizeAge } from "../lib/estimateAge.js";
 import { log } from "../lib/log.js";
+import { parseStationId } from "../lib/parseStationId.js";
+import { getStructureData, type StructureEntry } from "../lib/structureData.js";
 
 const DATASET_URL = "https://static.adam4eve.eu/IDs/playerStructure_extended.txt";
 

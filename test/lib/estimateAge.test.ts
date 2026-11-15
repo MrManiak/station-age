@@ -24,10 +24,9 @@ describe("estimateFirstSeen", () => {
     expect(() => estimateFirstSeen(1500n, [])).toThrow("No structure entries provided.");
   });
 
-  it.each([1000n, 2000n, 3000n, 4000n])("returns an exact match for %d", (id) => {
-    const result = estimateFirstSeen(id, entries);
+  it.each(entries)("returns an exact match for $id", (match) => {
+    const result = estimateFirstSeen(match.id, entries);
 
-    const match = entries.find((e) => e.id === id)!;
     expect(result).toEqual({ kind: "exact", date: match.firstSeen, match });
   });
 

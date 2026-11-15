@@ -106,7 +106,10 @@ async function refresh(): Promise<CacheSnapshot> {
 
 export async function getStructureData(): Promise<CacheSnapshot> {
   if (cache && Date.now() - cache.fetchedAt < TTL_MS) {
-    log("data", `cache hit (${cache.entries.length} entries, age ${Date.now() - cache.fetchedAt}ms)`);
+    log(
+      "data",
+      `cache hit (${cache.entries.length} entries, age ${Date.now() - cache.fetchedAt}ms)`,
+    );
     return cache;
   }
   if (!inFlight) {

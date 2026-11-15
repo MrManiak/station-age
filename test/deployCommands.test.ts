@@ -21,9 +21,6 @@ const mocks = vi.hoisted(() => {
   return { FakeREST, restInstances, put };
 });
 
-// Keeps a developer's real .env (and its bot token) out of the test run.
-vi.mock("dotenv/config", () => ({}));
-
 vi.mock("discord.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("discord.js")>()),
   REST: mocks.FakeREST,
@@ -47,19 +44,22 @@ beforeEach(() => {
   vi.stubEnv("DISCORD_CLIENT_ID", "1234567890");
 });
 
-it.each(["DISCORD_TOKEN", "DISCORD_CLIENT_ID"])("exits with an error when %s is not set", async (name) => {
-  vi.stubEnv(name, undefined);
-  const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-  const exit = spyOnExit();
+it.each(["DISCORD_TOKEN", "DISCORD_CLIENT_ID"])(
+  "exits with an error when %s is not set",
+  async (name) => {
+    vi.stubEnv(name, undefined);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const exit = spyOnExit();
 
-  await expect(deploy()).rejects.toBeInstanceOf(ExitCalled);
+    await expect(deploy()).rejects.toBeInstanceOf(ExitCalled);
 
-  expect(exit).toHaveBeenCalledExactlyOnceWith(1);
-  expect(consoleError).toHaveBeenCalledExactlyOnceWith(
-    "DISCORD_TOKEN and DISCORD_CLIENT_ID must both be set in .env.",
-  );
-  expect(mocks.put).not.toHaveBeenCalled();
-});
+    expect(exit).toHaveBeenCalledExactlyOnceWith(1);
+    expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+      "DISCORD_TOKEN and DISCORD_CLIENT_ID must both be set in .env.",
+    );
+    expect(mocks.put).not.toHaveBeenCalled();
+  },
+);
 
 it("registers /stationage as a global command for the application", async () => {
   mocks.put.mockResolvedValue([{ id: "1" }]);

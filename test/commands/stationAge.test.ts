@@ -190,25 +190,32 @@ describe("execute", () => {
   });
 
   it.each([
-    { name: "Amarr - Second", typeName: "Fortizar", expected: "Exact match: Amarr - Second (Fortizar)" },
+    {
+      name: "Amarr - Second",
+      typeName: "Fortizar",
+      expected: "Exact match: Amarr - Second (Fortizar)",
+    },
     { name: "Amarr - Second", typeName: "", expected: "Exact match: Amarr - Second" },
     { name: "", typeName: "Fortizar", expected: "Exact match: unnamed Fortizar" },
     { name: "", typeName: "", expected: "Exact match: unnamed structure" },
-  ])("describes an exact match with name $name and type $typeName", async ({ name, typeName, expected }) => {
-    vi.mocked(getStructureData).mockResolvedValue({
-      entries: [{ ...ENTRIES[1], name, typeName }],
-      fetchedAt: FETCHED_AT,
-    });
-    const { interaction, editReply } = fakeInteraction("2000000");
+  ])(
+    "describes an exact match with name $name and type $typeName",
+    async ({ name, typeName, expected }) => {
+      vi.mocked(getStructureData).mockResolvedValue({
+        entries: [{ ...ENTRIES[1], name, typeName }],
+        fetchedAt: FETCHED_AT,
+      });
+      const { interaction, editReply } = fakeInteraction("2000000");
 
-    await execute(interaction);
+      await execute(interaction);
 
-    expect(repliedEmbed(editReply).fields?.[3]).toEqual({
-      name: "Method",
-      value: expected,
-      inline: false,
-    });
-  });
+      expect(repliedEmbed(editReply).fields?.[3]).toEqual({
+        name: "Method",
+        value: expected,
+        inline: false,
+      });
+    },
+  );
 
   it("still names the boundary when the dataset has no name for it", async () => {
     vi.mocked(getStructureData).mockResolvedValue({

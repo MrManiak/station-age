@@ -48,7 +48,7 @@ export function estimateFirstSeen(targetId: bigint, entries: StructureEntry[]): 
 }
 
 export function humanizeAge(from: Date, to: Date = new Date()): string {
-  let ms = to.getTime() - from.getTime();
+  const ms = to.getTime() - from.getTime();
   if (ms < 0) return "in the future";
   const dayMs = 24 * 60 * 60 * 1000;
   const days = Math.floor(ms / dayMs);
