@@ -31,7 +31,7 @@ The `input` option accepts either:
 
 ## Setup
 
-You need Node.js 18 or newer and a Discord application with a bot user.
+You need Node.js 22.12 or newer and a Discord application with a bot user.
 
 1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications) and add a bot to it. The bot needs no privileged intents.
 2. Invite it to your server with the `bot` and `applications.commands` scopes.
@@ -75,8 +75,6 @@ docker compose up -d --build
 
 ## Development
 
-Running the tests needs Node.js 22.12 or newer.
-
 ```sh
 npm test            # run the test suite once
 npm run test:watch  # re-run tests as files change
@@ -87,6 +85,8 @@ npm run typecheck   # type-check the source and the tests
 The tests never contact Discord or Adam4EVE and do not read your `.env`.
 
 Every pull request runs the type check, the build and the coverage run on GitHub Actions. A pull request cannot be merged until that check passes, and the coverage run fails if any line, branch or function in `src/` is not exercised by a test.
+
+Dependabot opens pull requests for dependency updates once a week.
 
 ## Credits
 
